@@ -1,0 +1,35 @@
+name: Build and Push VDDK Image
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image
+        run: |
+          IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/vddk
+          VERSION=8.0.0   # adjust to your VDDK version
+          
+          docker buildx build \
+            --platform linux/amd64 \
+            --tag $IMAGE_NAME:$VERSION \
+            --tag $IMAGE_NAME:latest \
+            --push .
